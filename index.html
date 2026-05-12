@@ -24,9 +24,9 @@
       --font-display:  'Bricolage Grotesque', sans-serif;
       --font-body:     'DM Sans', sans-serif;
 
-      --ball-size:     320px;
-      --circle-size:   138px;
-      --window-size:   138px;
+      --ball-size:     min(320px, 62vw);
+      --circle-size:   calc(var(--ball-size) * 0.43);
+      --window-size:   calc(var(--ball-size) * 0.43);
     }
 
     /* ─────────────────────────────────────────
@@ -69,16 +69,17 @@
        KEYFRAMES
     ───────────────────────────────────────── */
 
-    /* Idle float */
+    /* Ball rests at top, bobs downward — never travels up into question */
     @keyframes ballFloat {
       0%   { transform: translateY(0px);   }
-      100% { transform: translateY(-22px); }
+      100% { transform: translateY(22px); }
     }
 
     /* Cast shadow — opposite to float */
+    /* Ball at rest (top) → soft wide shadow.  Ball low → tight dark shadow */
     @keyframes shadowPulse {
-      0%   { transform: scaleX(0.72); opacity: 0.50; }
-      100% { transform: scaleX(1.25); opacity: 0.32; }
+      0%   { transform: scaleX(1.25); opacity: 0.32; }
+      100% { transform: scaleX(0.72); opacity: 0.50; }
     }
 
     /* Desktop hold — subtle rattle */
@@ -121,39 +122,38 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      perspective: 900px;
-      position: relative;
+      justify-content: flex-start;
+      padding-top: 1rem;
       width: 100%;
-      padding-top: 110px;
+      position: relative;
     }
-
-    .question-above {
-      position: absolute;
-      top: 0.75rem;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 88%;
-      max-width: 420px;
-      font-family: var(--font-display);
-      font-weight: 800;
-      font-size: clamp(1rem, 3.5vw, 1.5rem);
-      text-align: center;
-      line-height: 1.2;
-      color: var(--color-black);
-      opacity: 0;
-      transition: opacity 0.4s ease;
-      z-index: 10;
-      pointer-events: none;
-    }
-
-    .question-above.visible { opacity: 1; }
 
     .ball-float-wrapper {
       display: flex;
       flex-direction: column;
       align-items: center;
+      transform-origin: top center;
     }
+
+    /* Question is now its own body-level row */
+    .question-above {
+      width: 100%;
+      max-width: 420px;
+      padding: 0 1rem;
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: clamp(1rem, 4vw, 1.5rem);
+      text-align: center;
+      line-height: 1.2;
+      color: var(--color-black);
+      opacity: 0;
+      min-height: 2rem;
+      margin-top: 1.25rem;
+      transition: opacity 0.4s ease;
+      pointer-events: none;
+    }
+
+    .question-above.visible { opacity: 1; }
 
     .ball-shadow {
       width: calc(var(--ball-size) * 0.72);
@@ -220,7 +220,7 @@
     .ball-eight {
       font-family: 'Arial Black', 'Bricolage Grotesque', sans-serif;
       font-weight: 900;
-      font-size: 4.6rem;
+      font-size: calc(var(--ball-size) * 0.28);
       color: #0a0a0a;
       line-height: 1;
       letter-spacing: -0.02em;
@@ -263,11 +263,11 @@
       top: 54%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 44px;
+      width: calc(var(--ball-size) * 0.14);
       text-align: center;
       font-family: var(--font-display);
       font-weight: 800;
-      font-size: 0.44rem;
+      font-size: calc(var(--ball-size) * 0.034);
       color: #fff;
       line-height: 1.35;
       text-transform: uppercase;
@@ -572,14 +572,7 @@
        RESPONSIVE
     ───────────────────────────────────────── */
     @media (max-width: 480px) {
-      :root {
-        --ball-size:    260px;
-        --circle-size:  112px;
-        --window-size:  112px;
-      }
-      .ball-eight  { font-size: 3.7rem; }
       .input-label { font-size: 1rem; }
-      .answer-text { font-size: 0.42rem; width: 48px; }
     }
 
   </style>
@@ -594,9 +587,11 @@
     <span class="logo">Loose Cannon Co.</span>
   </header>
 
+  <!-- Question row — own dedicated space, ball cannot reach it -->
+  <p class="question-above" id="questionAbove"></p>
+
   <!-- Ball -->
   <main class="ball-stage">
-    <p class="question-above" id="questionAbove"></p>
     <div class="ball-float-wrapper">
       <div class="ball" id="ball">
         <div class="ball-face">
@@ -774,10 +769,11 @@
       appState = 'ready';
       await requestMotionPermission();
 
-      // Show question above ball
+      // Blur input so iOS doesn't show "undo typing" on shake
+      questionInput.blur();
+
       questionAbove.textContent = q;
       questionAbove.classList.add('visible');
-
       inputLabel.style.display = 'none';
       inputRow.style.display   = 'none';
       shakePrompt.classList.add('visible');

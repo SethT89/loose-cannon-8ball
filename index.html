@@ -181,7 +181,7 @@
         #000000 100%
       );
       position: relative;
-      cursor: grab;
+      cursor: default;
       user-select: none;
       overflow: hidden;
       animation: ballFloat 3s ease-in-out infinite alternate;
@@ -191,7 +191,9 @@
         inset -20px -20px 60px rgba(0,0,0,0.7);
     }
 
-    .ball:active      { cursor: grabbing; }
+    /* Only show grab cursor when ready to shake */
+    .ball.is-ready      { cursor: grab; }
+    .ball.is-ready:active { cursor: grabbing; }
     .ball.is-charging { animation: ballCharge 0.12s ease-in-out infinite; cursor: grabbing; }
     .ball.is-shaking  { animation: ballShake  0.6s  ease-in-out forwards; cursor: grabbing; }
 
@@ -285,17 +287,16 @@
       top: 56%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: calc(var(--window-size) * 0.52);
+      width: calc(var(--window-size) * 0.32);
       text-align: center;
       font-family: var(--font-display);
       font-weight: 800;
-      font-size: calc(var(--window-size) * 0.12);
+      font-size: calc(var(--window-size) * 0.055);
       color: #fff;
-      line-height: 1.25;
+      line-height: 1.2;
       text-transform: uppercase;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.03em;
       pointer-events: none;
-      overflow: hidden;
     }
 
     /* ─────────────────────────────────────────
@@ -841,7 +842,9 @@
       appState = 'ready';
       await requestMotionPermission();
 
-      // Blur input so iOS doesn't show "undo typing" on shake
+      // Enable grab cursor only after submission
+      ball.classList.add('is-ready');
+
       questionInput.blur();
 
       questionAbove.textContent = q;
@@ -885,7 +888,6 @@
     function showAnswer() {
       const picked = randomAnswer();
       answerText.textContent = picked;
-      scaleAnswerText(picked);
 
       // Easter egg 🎬
       if (picked === BUNNY_ANSWER) {
@@ -917,6 +919,7 @@
 
     function resetApp() {
       stopCageRain();
+      ball.classList.remove('is-ready');
       const wrapper = ball.closest('.ball-float-wrapper');
       wrapper.classList.remove('is-zooming');
       ballFace.classList.remove('rotating-back');
@@ -926,7 +929,6 @@
       ballWindow.style.transform = '';
       answerText.classList.remove('is-revealing');
       answerText.textContent = '';
-      answerText.style.fontSize = '';
       ballShadow.style.opacity = '';
 
       questionAbove.classList.remove('visible');
@@ -985,19 +987,6 @@
       }
     }
 
-    // ── Auto-scale answer text to fit triangle ──
-    function scaleAnswerText(text) {
-      const len = text.length;
-      const windowPx = parseFloat(getComputedStyle(document.documentElement)
-                        .getPropertyValue('--window-size'));
-      let scale;
-      if      (len <= 8)  scale = 0.13;
-      else if (len <= 14) scale = 0.10;
-      else if (len <= 22) scale = 0.085;
-      else if (len <= 30) scale = 0.072;
-      else                scale = 0.060;
-      answerText.style.fontSize = (windowPx * scale) + 'px';
-    }
     const BASE_URL  = window.location.origin + window.location.pathname.replace(/\/$/, '');
     const CAGE_URL  = BASE_URL + '/cage.jpg';
     console.log('Cage URL:', CAGE_URL);
@@ -1314,6 +1303,14 @@
 
     // ── Shake button fallback ──
     btnShake.addEventListener('click', () => triggerShake());
+
+    // Enter key triggers shake when in ready state
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && appState === 'ready') {
+        e.preventDefault();
+        triggerShake();
+      }
+    });
 
     // ── DeviceMotion ──
     window.addEventListener('devicemotion', e => {

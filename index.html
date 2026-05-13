@@ -614,8 +614,6 @@
 </head>
 <body>
 
-  <!-- TEMP TEST BUTTON - remove after testing -->
-  <button onclick="startCageRain()" style="position:fixed;bottom:10px;left:10px;z-index:9999;padding:8px 12px;background:red;color:white;border:none;border-radius:8px;font-size:12px;cursor:pointer;">Test Cage Rain</button>
   <canvas id="cageCanvas"></canvas>
 
   <!-- Capture zone: logo + question + ball — this gets screenshotted -->
@@ -820,7 +818,7 @@
       'That\'s content',
       'Make it a reel',
     ];
-    const randomAnswer = () => answers[0]; // TESTING: force bunny answer
+    const randomAnswer = () => answers[Math.floor(Math.random() * answers.length)];
 
     // ── State ──
     let appState      = 'idle';

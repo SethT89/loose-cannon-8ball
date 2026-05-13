@@ -596,7 +596,7 @@
       width: 100%;
       height: 100%;
       pointer-events: none;
-      z-index: 0;
+      z-index: 50;
       opacity: 0;
       transition: opacity 0.5s ease;
     }
@@ -887,7 +887,7 @@
 
       // Easter egg 🎬
       if (picked === BUNNY_ANSWER) {
-        setTimeout(() => startCageRain(), 1500);
+        setTimeout(() => startCageRain(), 500);
       }
       const wrapper = ball.closest('.ball-float-wrapper');
 
@@ -983,7 +983,8 @@
     }
 
     // ── Nicolas Cage Rain Easter Egg ──
-    const CAGE_URL    = './cage.jpg';
+    const BASE_URL  = window.location.origin + window.location.pathname.replace(/\/$/, '');
+    const CAGE_URL  = BASE_URL + '/cage.jpg';
     const BUNNY_ANSWER = 'Put the bunny back in the box';
 
     const cageCanvas  = document.getElementById('cageCanvas');
@@ -996,9 +997,9 @@
     // Pre-load + remove white background
     function loadCageImage() {
       const img = new Image();
-      img.crossOrigin = 'anonymous';
+      // No crossOrigin needed for same-origin local file
       img.onload = () => {
-        // Draw to offscreen canvas and knock out white background
+        console.log('Cage image loaded:', img.width, img.height);
         const off = document.createElement('canvas');
         off.width  = img.width;
         off.height = img.height;
@@ -1009,14 +1010,15 @@
         const d = data.data;
         for (let i = 0; i < d.length; i += 4) {
           const r = d[i], g = d[i+1], b = d[i+2];
-          // Remove near-white pixels
           if (r > 220 && g > 220 && b > 220) {
             d[i+3] = 0;
           }
         }
         octx.putImageData(data, 0, 0);
         cageImg = off;
+        console.log('Cage image processed OK');
       };
+      img.onerror = (e) => console.error('Cage image failed to load:', e);
       img.src = CAGE_URL;
     }
 
@@ -1078,6 +1080,7 @@
     }
 
     function startCageRain() {
+      console.log('Starting cage rain, image ready:', !!cageImg);
       clearTimeout(cageFadeTimeout);
       resizeCageCanvas();
       spawnCageParticles();

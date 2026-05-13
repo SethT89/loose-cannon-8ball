@@ -1035,12 +1035,12 @@
 
     function spawnCageParticles() {
       cageParticles = [];
-      const count = 18;
+      const count = 54; // tripled from 18
       for (let i = 0; i < count; i++) {
         cageParticles.push({
           x:      Math.random() * window.innerWidth,
           y:      -80 - Math.random() * window.innerHeight,
-          size:   40 + Math.random() * 80,
+          size:   40 + Math.random() * 160, // max doubled from 80 to 160
           speed:  2 + Math.random() * 3,
           spin:   (Math.random() - 0.5) * 0.06,
           angle:  Math.random() * Math.PI * 2,
@@ -1090,8 +1090,8 @@
       if (cageAnimId) cancelAnimationFrame(cageAnimId);
       cageAnimId = requestAnimationFrame(animateCage);
 
-      // Auto-stop after 5 seconds
-      cageFadeTimeout = setTimeout(stopCageRain, 5000);
+      // Auto-stop after 8 seconds (5s visible + fade)
+      cageFadeTimeout = setTimeout(stopCageRain, 8000);
     }
 
     function stopCageRain() {

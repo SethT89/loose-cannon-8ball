@@ -282,19 +282,20 @@
     /* Text overlaid on the SVG triangle, fitted to its center */
     .answer-text {
       position: absolute;
-      top: 54%;
+      top: 56%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: calc(var(--ball-size) * 0.14);
+      width: calc(var(--window-size) * 0.52);
       text-align: center;
       font-family: var(--font-display);
       font-weight: 800;
-      font-size: calc(var(--ball-size) * 0.034);
+      font-size: calc(var(--window-size) * 0.12);
       color: #fff;
-      line-height: 1.35;
+      line-height: 1.25;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.04em;
       pointer-events: none;
+      overflow: hidden;
     }
 
     /* ─────────────────────────────────────────
@@ -782,21 +783,21 @@
     const answers = [
       // Unhinged Yes
       'Bestie, absolutely',
-      'The ancestors said go off',
-      'Bold of you to ask but yes',
+      'Ancestors say yes',
+      'Bold move. Yes.',
       'This is your sign, dummy',
       'Obviously. Keep up.',
       'The vibes confirm it',
       'Girl yes',
-      'Do it before I change my mind',
+      'Do it. Now.',
       // Savage No
       'Hell Nah',
       'Not in this economy',
       'lol no',
       'Ask yo mama',
-      'The audacity of this question',
-      'My lawyer advised me not to answer',
-      'Absolutely not and I\'m offended you asked',
+      'The audacity',
+      'Lawyer says no',
+      'No. Goodbye.',
       'No and seek help',
       // Chaos / Deflect
       'Put the bunny back in the box',
@@ -806,12 +807,12 @@
       'Sir this is a Wendy\'s',
       'Consult a goat',
       'What is even real',
-      'I don\'t get paid enough for this',
+      'Not paid enough for this',
       // 4th Wall / Meta
-      'Why are you asking a ball',
-      'I\'m an 8 ball not a therapist',
+      'Ask a real one',
+      'I\'m a ball, not a therapist',
       'Delete this question',
-      'Even I know better than that',
+      'Even I know better',
       // LC Brand Nods
       'Only if it goes viral',
       'Loose Cannon says yes',
@@ -884,6 +885,7 @@
     function showAnswer() {
       const picked = randomAnswer();
       answerText.textContent = picked;
+      scaleAnswerText(picked);
 
       // Easter egg 🎬
       if (picked === BUNNY_ANSWER) {
@@ -924,6 +926,7 @@
       ballWindow.style.transform = '';
       answerText.classList.remove('is-revealing');
       answerText.textContent = '';
+      answerText.style.fontSize = '';
       ballShadow.style.opacity = '';
 
       questionAbove.classList.remove('visible');
@@ -982,7 +985,19 @@
       }
     }
 
-    // ── Nicolas Cage Rain Easter Egg ──
+    // ── Auto-scale answer text to fit triangle ──
+    function scaleAnswerText(text) {
+      const len = text.length;
+      const windowPx = parseFloat(getComputedStyle(document.documentElement)
+                        .getPropertyValue('--window-size'));
+      let scale;
+      if      (len <= 8)  scale = 0.13;
+      else if (len <= 14) scale = 0.10;
+      else if (len <= 22) scale = 0.085;
+      else if (len <= 30) scale = 0.072;
+      else                scale = 0.060;
+      answerText.style.fontSize = (windowPx * scale) + 'px';
+    }
     const BASE_URL  = window.location.origin + window.location.pathname.replace(/\/$/, '');
     const CAGE_URL  = BASE_URL + '/cage.jpg';
     console.log('Cage URL:', CAGE_URL);

@@ -8,7 +8,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
   <style>
 
@@ -173,29 +172,51 @@
       width: var(--ball-size);
       height: var(--ball-size);
       border-radius: 50%;
-      background: var(--color-ball);
+      /* Sphere gradient — offset focal point for 3D depth, matches canvas */
+      background: radial-gradient(
+        circle at 38% 35%,
+        #444444 0%,
+        #1e1e1e 25%,
+        #000000 100%
+      );
       position: relative;
       cursor: grab;
       user-select: none;
       overflow: hidden;
       animation: ballFloat 3s ease-in-out infinite alternate;
+      /* Inset shadow darkens edges like canvas inset gradient */
       box-shadow:
-        inset -28px -18px 55px rgba(255,255,255,0.07),
-        inset  18px  18px 40px rgba(0,0,0,0.65);
+        inset 6px 6px 40px rgba(255,255,255,0.06),
+        inset -20px -20px 60px rgba(0,0,0,0.7);
     }
 
     .ball:active      { cursor: grabbing; }
     .ball.is-charging { animation: ballCharge 0.12s ease-in-out infinite; cursor: grabbing; }
     .ball.is-shaking  { animation: ballShake  0.6s  ease-in-out forwards; cursor: grabbing; }
 
-    /* Specular highlight */
+    /* Specular highlight — elliptical, top-left, matching canvas */
     .ball::before {
       content: '';
       position: absolute;
-      top: 14%; left: 18%;
-      width: 28%; height: 16%;
-      background: radial-gradient(ellipse, rgba(255,255,255,0.18) 0%, transparent 70%);
+      top: 12%; left: 14%;
+      width: 32%; height: 18%;
+      background: radial-gradient(ellipse, rgba(255,255,255,0.22) 0%, transparent 70%);
       border-radius: 50%;
+      transform: rotate(-20deg);
+      pointer-events: none;
+    }
+
+    /* Edge darkening — mimics canvas inset shadow at perimeter */
+    .ball::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: radial-gradient(
+        circle at 60% 65%,
+        transparent 40%,
+        rgba(0,0,0,0.45) 100%
+      );
       pointer-events: none;
     }
 
@@ -691,7 +712,7 @@
     <div class="result-prompt" id="resultPrompt">
       <div class="result-buttons">
         <button class="btn-share" id="btnShare">Share</button>
-        <button class="btn-shake" id="btnReset">Test Your Luck</button>
+        <button class="btn-shake" id="btnReset">Ask Another</button>
       </div>
     </div>
 
@@ -914,31 +935,134 @@
       btnShare.textContent = isTouchDevice ? 'Sharing...' : 'Saving...';
 
       try {
-        const zone   = document.getElementById('captureZone');
-        const canvas = await html2canvas(zone, {
-          backgroundColor: '#ffc7ea',
-          scale: 2,
-          useCORS: true,
-          logging: false,
+        // Ensure custom fonts are loaded before drawing
+        await document.fonts.ready;
+
+        const question = questionAbove.textContent || '';
+        const answer   = (answerText.textContent || '').toUpperCase();
+
+        const W = 1080, H = 1350;
+        const canvas = document.createElement('canvas');
+        canvas.width = W; canvas.height = H;
+        const ctx = canvas.getContext('2d');
+
+        // ── Background ──
+        ctx.fillStyle = '#ffc7ea';
+        ctx.fillRect(0, 0, W, H);
+
+        // ── Logo ──
+        ctx.fillStyle = '#0a0a0a';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.font = '800 38px "Bricolage Grotesque", sans-serif';
+        // Manual letter spacing
+        const logo = 'LOOSE  CANNON  CO.';
+        ctx.fillText(logo, W / 2, 90);
+
+        // ── Question (word-wrapped) ──
+        ctx.font = '800 68px "Bricolage Grotesque", sans-serif';
+        const qLines = wrapText(ctx, question, 880);
+        const qStartY = 200;
+        const qLineHeight = 80;
+        qLines.forEach((line, i) => {
+          ctx.fillText(line, W / 2, qStartY + i * qLineHeight);
         });
 
-        const cropHeight = Math.round(canvas.height * 0.88);
-        const cropped    = document.createElement('canvas');
-        cropped.width    = canvas.width;
-        cropped.height   = cropHeight;
-        cropped.getContext('2d').drawImage(canvas, 0, 0);
+        // ── 8 Ball — positioned dynamically below the question ──
+        const qEndY = qStartY + qLines.length * qLineHeight;
+        const cx = W / 2;
+        const R  = 320;
+        const gap = 90;                              // breathing room
+        const cy = qEndY + gap + R;                  // ball top sits gap px below question
 
-        cropped.toBlob(async (blob) => {
+        // Sphere with radial gradient — offset highlight matches website top-left
+        const sphere = ctx.createRadialGradient(cx - 100, cy - 120, 30, cx, cy, R);
+        sphere.addColorStop(0,   '#444444');
+        sphere.addColorStop(0.25,'#1e1e1e');
+        sphere.addColorStop(1,   '#000000');
+        ctx.fillStyle = sphere;
+        ctx.beginPath();
+        ctx.arc(cx, cy, R, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Inset shadow — bottom-right darkening like CSS inset box-shadow
+        const inset = ctx.createRadialGradient(cx + 80, cy + 80, R * 0.3, cx, cy, R);
+        inset.addColorStop(0,   'rgba(0,0,0,0)');
+        inset.addColorStop(0.7, 'rgba(0,0,0,0)');
+        inset.addColorStop(1,   'rgba(0,0,0,0.55)');
+        ctx.fillStyle = inset;
+        ctx.beginPath();
+        ctx.arc(cx, cy, R, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Specular highlight — top-left ellipse matching website
+        const hl = ctx.createRadialGradient(cx - 100, cy - 130, 0, cx - 100, cy - 130, 120);
+        hl.addColorStop(0, 'rgba(255,255,255,0.20)');
+        hl.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = hl;
+        ctx.beginPath();
+        ctx.ellipse(cx - 100, cy - 130, 120, 70, -0.3, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Inner black window
+        const wR = 150;
+        ctx.fillStyle = '#000';
+        ctx.beginPath();
+        ctx.arc(cx, cy, wR, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Ambient blue glow (blurred triangle behind main triangle)
+        ctx.save();
+        ctx.shadowColor = 'rgba(34, 85, 255, 0.9)';
+        ctx.shadowBlur = 40;
+        ctx.fillStyle = '#2255ff';
+        ctx.globalAlpha = 0.65;
+        ctx.beginPath();
+        ctx.moveTo(cx,       cy - 98);
+        ctx.lineTo(cx + 96,  cy + 78);
+        ctx.lineTo(cx - 96,  cy + 78);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+
+        // Main blue triangle
+        ctx.fillStyle = '#1a44ee';
+        ctx.beginPath();
+        ctx.moveTo(cx,       cy - 98);
+        ctx.lineTo(cx + 96,  cy + 78);
+        ctx.lineTo(cx - 96,  cy + 78);
+        ctx.closePath();
+        ctx.fill();
+
+        // Ring — dark top, blue-tinted bottom, matching website SVG ring
+        const ringGrad = ctx.createLinearGradient(0, cy - wR, 0, cy + wR);
+        ringGrad.addColorStop(0,    '#0d0d0d');
+        ringGrad.addColorStop(0.55, '#0d0d0d');
+        ringGrad.addColorStop(1,    'rgba(26, 53, 204, 0.6)');
+        ctx.strokeStyle = ringGrad;
+        ctx.lineWidth = 9;
+        ctx.beginPath();
+        ctx.arc(cx, cy, wR - 4, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // ── Answer text (centered in triangle) ──
+        ctx.fillStyle = '#fff';
+        ctx.font = '800 30px "Bricolage Grotesque", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const aLines = wrapText(ctx, answer, 110);
+        const aStartY = cy + 18 - (aLines.length - 1) * 18;
+        aLines.forEach((line, i) => {
+          ctx.fillText(line, cx, aStartY + i * 36);
+        });
+
+        // ── Export ──
+        canvas.toBlob(async (blob) => {
           const file = new File([blob], 'loose-cannon-8ball.png', { type: 'image/png' });
 
           if (isTouchDevice && navigator.share && navigator.canShare({ files: [file] })) {
-            // Mobile — native share sheet (includes "Save Image to Photos" automatically)
-            await navigator.share({
-              files: [file],
-              title: 'Loose Cannon Magic 8 Ball',
-            });
+            await navigator.share({ files: [file], title: 'Loose Cannon Magic 8 Ball' });
           } else {
-            // Desktop — download directly
             const url = URL.createObjectURL(blob);
             const a   = document.createElement('a');
             a.href = url;
@@ -956,6 +1080,24 @@
         btnShare.classList.remove('loading');
         btnShare.textContent = isTouchDevice ? 'Share' : 'Download Image';
       }
+    }
+
+    // Helper: word-wrap text on canvas
+    function wrapText(ctx, text, maxWidth) {
+      const words = text.split(' ');
+      const lines = [];
+      let line = '';
+      for (const word of words) {
+        const test = line ? line + ' ' + word : word;
+        if (ctx.measureText(test).width > maxWidth && line) {
+          lines.push(line);
+          line = word;
+        } else {
+          line = test;
+        }
+      }
+      if (line) lines.push(line);
+      return lines;
     }
 
     document.getElementById('btnShare').addEventListener('click', handleShare);

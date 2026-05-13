@@ -613,7 +613,8 @@
 </head>
 <body>
 
-  <!-- Nicolas Cage rain — easter egg -->
+  <!-- TEMP TEST BUTTON - remove after testing -->
+  <button onclick="startCageRain()" style="position:fixed;bottom:10px;left:10px;z-index:9999;padding:8px 12px;background:red;color:white;border:none;border-radius:8px;font-size:12px;cursor:pointer;">Test Cage Rain</button>
   <canvas id="cageCanvas"></canvas>
 
   <!-- Capture zone: logo + question + ball — this gets screenshotted -->
@@ -985,6 +986,7 @@
     // ── Nicolas Cage Rain Easter Egg ──
     const BASE_URL  = window.location.origin + window.location.pathname.replace(/\/$/, '');
     const CAGE_URL  = BASE_URL + '/cage.jpg';
+    console.log('Cage URL:', CAGE_URL);
     const BUNNY_ANSWER = 'Put the bunny back in the box';
 
     const cageCanvas  = document.getElementById('cageCanvas');

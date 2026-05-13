@@ -856,7 +856,19 @@
 
     btnSubmit.addEventListener('click', submitQuestion);
     questionInput.addEventListener('keydown', e => {
-      if (e.key === 'Enter') submitQuestion();
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        e.stopPropagation();
+        submitQuestion();
+      }
+    });
+
+    // Enter key triggers shake when in ready state
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && appState === 'ready') {
+        e.preventDefault();
+        triggerShake();
+      }
     });
 
     // ── iOS motion permission ──
@@ -1303,14 +1315,6 @@
 
     // ── Shake button fallback ──
     btnShake.addEventListener('click', () => triggerShake());
-
-    // Enter key triggers shake when in ready state
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && appState === 'ready') {
-        e.preventDefault();
-        triggerShake();
-      }
-    });
 
     // ── DeviceMotion ──
     window.addEventListener('devicemotion', e => {
